@@ -1,175 +1,192 @@
-# PawPal+ (Module 2 Project)
+# PawPal AI — Intelligent Pet Care Planning and Reliability System
 
-You are building **PawPal+**, a Streamlit app that helps a pet owner plan care tasks for their pet.
+**Status:** In development — original PawPal+ application verified; AI planning extension pending implementation and evaluation.
 
-## Scenario
+## Project summary
 
-A busy pet owner needs help staying consistent with pet care. They want an assistant that can:
+PawPal AI is an extension of **PawPal+**, my Module 2 AI110 project. It aims to help pet owners coordinate care across multiple pets by proposing practical schedules, checking constraints, explaining scheduling decisions, and identifying tasks that need human attention.
 
-- Track pet care tasks (walks, feeding, meds, enrichment, grooming, etc.)
-- Consider constraints (time available, priority, owner preferences)
-- Produce a daily plan and explain why it chose that plan
+The project emphasizes **reliable, explainable planning**: a proposed schedule should be checked before a pet owner relies on it. The intended AI extension uses a multi-step, rule-based planning agent with an evaluate-and-revise loop, rather than a hosted language model.
 
-Your job is to design the system first (UML), then implement the logic in Python, then connect it to the Streamlit UI.
+## Original project: PawPal+ (Module 2)
 
-## What you will build
+PawPal+ was a Python and Streamlit pet-care scheduling application designed to organize care tasks for multiple pets. It allowed owners to add pets and tasks, assign priorities and recurrence schedules, track completion, generate daily task lists within a time budget, detect overlapping tasks, and find available time slots. The original system warned about conflicts but did not automatically produce and validate a revised, conflict-free schedule.
 
-Your final app should:
+Original project: [AI110 Module 2 PawPal starter](https://github.com/ecopot-a11y/ai110-module2show-pawpal-starter)
 
-- Let a user enter basic owner + pet info
-- Let a user add/edit tasks (duration + priority at minimum)
-- Generate a daily schedule/plan based on constraints and priorities
-- Display the plan clearly (and ideally explain the reasoning)
-- Include tests for the most important scheduling behaviors
+## What the final project adds
 
-## Getting started
+**Planned integrated extension (not yet implemented):**
 
-### Setup
+1. **Planning agent:** Build a proposed timed care schedule from the owner's pets, tasks, priorities, available minutes, and scheduling window.
+2. **Evaluate-and-revise loop:** Detect overlapping proposed tasks, time-budget violations, and unscheduled tasks; attempt a bounded revision when possible.
+3. **Reliability guardrails:** Validate input and scheduling constraints; flag tasks that cannot be scheduled rather than silently omitting them or claiming success.
+4. **Explainability and owner oversight:** Explain the resulting plan and unresolved trade-offs; present proposed changes for owner review before applying them.
+5. **Scenario-based evaluation:** Test the integrated workflow with reproducible cases and record what passed or failed.
 
-```bash
-python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-```
+The extension must be integrated into the Streamlit application, not run only as a standalone demo.
 
-### Suggested workflow
+## Architecture overview
 
-1. Read the scenario carefully and identify requirements and edge cases.
-2. Draft a UML diagram (classes, attributes, methods, relationships).
-3. Convert UML into Python class stubs (no logic yet).
-4. Implement scheduling logic in small increments.
-5. Add tests to verify key behaviors.
-6. Connect your logic to the Streamlit UI in `app.py`.
-7. Refine UML so it matches what you actually built.
+Mermaid source: [`diagrams/architecture.mmd`](diagrams/architecture.mmd).
 
-## Implementation Summary
+The **target architecture** follows this flow:
 
-PawPal+ uses four Python classes in `pawpal_system.py`. `Task` represents an activity with a description, duration, frequency, priority, and completion status. `Pet` holds a pet's details and tasks, while `Owner` manages multiple pets and combines their tasks using `get_all_tasks()`. `Scheduler` calls that owner method, skips completed tasks, sorts remaining tasks by priority and shorter duration, and selects activities that fit within the owner's available time. Its `explain_plan()` method formats the schedule for display.
+1. The pet owner enters tasks and planning preferences through Streamlit (`app.py`).
+2. Input validation checks the request before planning.
+3. The system retrieves the in-memory `Owner`, `Pet`, and `Task` records managed by `pawpal_system.py`.
+4. A planning agent proposes task times.
+5. An evaluator checks conflicts, time budget, and omissions; the planner revises fixable issues within a bounded loop.
+6. The app displays an explanation, unresolved issues, and a proposed plan for human review.
+7. Automated tests exercise validation, planning, and evaluation.
 
-The `main.py` demonstration exercises sorting, filtering, conflict detection, recurring tasks, and a multi-pet daily schedule. The Streamlit interface in `app.py` connects the backend to pet/task entry, task completion, warnings, and schedule display.
+**Architecture status:** This describes the intended final design. Update the Mermaid source and this section to match the actual implementation before final submission.
 
-## Testing PawPal+
+## Technology
 
-Run the full automated test suite from the project root:
+- Python 3.13 (tested locally with Python 3.13.7)
+- Streamlit user interface
+- Pytest automated testing
+- Git and GitHub version control
+- Mermaid architecture diagram
+
+The planned planning agent is a **rule-based agentic workflow**, not a fine-tuned model or an LLM. It should not be described as providing veterinary diagnosis or medical advice.
+
+## Setup and run
+
+### 1. Clone the repository
 
 ```powershell
-python -m pytest
+git clone https://github.com/ecopot-a11y/pawpal-applied-ai-final.git
+cd pawpal-applied-ai-final
 ```
 
-The nine tests cover task completion and addition (2), chronological sorting (1), daily and weekly recurrence plus one-time tasks (3), and conflict detection for same-time, overlapping, and non-conflicting tasks (3).
+### 2. Create and activate a virtual environment (Windows PowerShell)
 
-### Successful test run
-
-The following is the actual output from the successful `python -m pytest -v` run (the verbose form of the command above):
-
-```text
-========================= test session starts ==========================
-platform win32 -- Python 3.13.7, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\COD\Documents\AI110\ai110-module2show-pawpal-starter\.venv\Scripts\python.exe
-cachedir: .pytest_cache
-rootdir: C:\Users\COD\Documents\AI110\ai110-module2show-pawpal-starter
-plugins: anyio-4.15.1
-collected 9 items
-
-test_conflicts.py::test_same_time_different_pets_warns PASSED     [ 11%]
-test_conflicts.py::test_partial_overlap_same_pet_warns PASSED     [ 22%]
-test_conflicts.py::test_adjacent_completed_future_and_untimed_tasks_do_not_conflict PASSED [ 33%]
-test_recurrence.py::test_daily_recurrence PASSED                  [ 44%]
-test_recurrence.py::test_weekly_recurrence PASSED                 [ 55%]
-test_recurrence.py::test_one_time_task_does_not_recur PASSED      [ 66%]
-tests/test_pawpal.py::test_task_completion PASSED                 [ 77%]
-tests/test_pawpal.py::test_task_addition PASSED                   [ 88%]
-tests/test_pawpal.py::test_sorting_correctness PASSED             [100%]
-
-========================== 9 passed in 0.32s ===========================
+```powershell
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
 ```
 
-### Confidence level: ★★★★☆ (4/5 stars)
+If PowerShell blocks activation, run the following in the current terminal and then activate again:
 
-All nine automated tests passed, giving me confidence in task management, sorting, recurrence, and conflict detection. I am not assigning five stars because overnight scheduling edge cases and end-to-end Streamlit behavior have not yet been fully tested.
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+.\.venv\Scripts\Activate.ps1
+```
 
-## Features
+### 3. Install dependencies
 
-- **Multi-pet care management:** `Owner.add_pet()` and `Pet.add_task()` keep each pet's activities organized, while `Owner.get_all_tasks()` gathers them for scheduling.
-- **Chronological sorting:** `Scheduler.sort_by_time()` orders tasks by their `HH:MM` start time and places tasks without a start time last.
-- **Task filtering:** `Scheduler.filter_tasks()` filters by pet name, completion status, or both.
-- **Conflict warnings:** `Scheduler.find_conflicts()` detects overlapping start-time and duration intervals, including tasks for different pets, and warns without automatically changing the schedule.
-- **Recurring tasks:** `Task.next_occurrence()` and `Scheduler.mark_task_complete()` create the next pending daily or weekly task when an occurrence is completed. One-time tasks do not recur.
-- **Time-budgeted daily plans:** `Scheduler.generate_schedule()` selects pending tasks due by the chosen date, prioritizing higher-priority and shorter tasks within the owner's available minutes. `Scheduler.explain_plan()` describes the result.
+```powershell
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
 
-## 📐 Smarter Scheduling
-
-PawPal+ supports scheduling across multiple pets by collecting `(Pet, Task)` pairs through `Owner.get_all_tasks()`.
-
-| Feature | Method(s) | Behavior |
-|---|---|---|
-| Sorting by time | `Scheduler.sort_by_time()` | Orders all pets' tasks by `HH:MM` start time using `sorted()` and a lambda; untimed tasks come last. |
-| Filtering | `Scheduler.filter_tasks(pet_name=None, completed=None)` | Returns tasks for a chosen pet, completion status, or both. Pet-name matching ignores case. |
-| Conflict detection | `Scheduler.find_conflicts(on_date=None)` | Checks overlapping time intervals across pets and returns warning strings. It ignores completed, untimed, and future-dated tasks and does not automatically reschedule them. |
-| Recurring tasks | `Task.next_occurrence()`, `Pet.mark_task_complete()`, `Scheduler.mark_task_complete()` | Completing a daily or weekly task through the pet/scheduler creates a new pending occurrence 1 or 7 days after the original due date. The completed task remains in history. |
-| Daily plan | `Scheduler.generate_schedule()` | Chooses pending tasks due by the selected date using priority, duration, and the owner's available-minute budget. |
-
-Sorting, filtering, conflict warnings, and daily-plan selection are separate operations. The daily plan does not automatically resolve conflicting appointment times.
-
-## Demo Walkthrough
-
-### Start the app
-
-From the project root, install the dependencies if needed, then launch the interactive UI:
+### 4. Run the existing PawPal+ interface
 
 ```powershell
 python -m streamlit run app.py
 ```
 
-1. **Set owner preferences:** In the sidebar, enter the owner's name and daily minutes available for pet care.
-2. **Add pets:** Use **Add a pet** to register Mochi (dog) and Luna (cat). Both pets can have independent care tasks.
-3. **Schedule care tasks:** Under **Add a care task**, choose a pet, enter an activity such as *Morning walk*, select its duration and priority, choose a daily/weekly/one-time frequency, set its first due date, and optionally set a specific start time (for example, 08:00).
-4. **Review and filter:** The **Sorted and filtered tasks** table lists tasks in chronological order. Filter by pet or by pending/completed status.
-5. **Complete recurring tasks:** Select a pending task and choose **Mark complete**. Daily and weekly activities create a new occurrence for the following day or week, while the completed occurrence remains in the history.
-6. **Inspect conflicts:** For example, add Mochi's 20-minute walk at 08:00 and Luna's 10-minute feeding at 08:10, both due today. The app displays a warning identifying the overlapping activities. The owner decides whether to change them; PawPal+ does not automatically reschedule tasks.
-7. **Generate a daily plan:** Choose a plan date and click **Generate daily plan**. The app shows tasks that fit the available time budget, chosen by priority and duration. Conflict warnings are separate from the plan selection.
+The interface currently supports pet/task management, recurrence, conflict warnings, and daily task selection. **The new AI planning interface will be documented here after implementation.**
 
-### Command-line demonstration
-
-You can also run the backend demonstration without Streamlit:
+### 5. Run the original command-line demonstration
 
 ```powershell
 python main.py
 ```
 
-Example output from the current `main.py` (dates depend on when the script is run):
+### 6. Run automated tests
 
-```text
-All tasks sorted by time
-========================
-08:00 | Luna: Feed Luna (pending)
-10:00 | Luna: Playtime (complete)
-14:30 | Mochi: Brush Mochi (pending)
-18:00 | Mochi: Evening walk (pending)
-
-Mochi's pending tasks
-=====================
-18:00 | Mochi: Evening walk (pending)
-14:30 | Mochi: Brush Mochi (pending)
-
-All completed tasks
-===================
-10:00 | Luna: Playtime (complete)
-
-Task conflict warnings
-======================
-WARNING: Mochi's Give medication (08:00, 10 min) overlaps with Luna's Feed Luna (08:00, 10 min).
-
-Recurring tasks after completion
-================================
-Evening walk: 2026-10-14 -> 2026-10-15 (daily)
-Brush Mochi: 2026-10-14 -> 2026-10-21 (weekly)
-Mochi now has 5 tasks, including completed history.
-
-Today's Schedule
-================
-Daily care plan for Jordan:
-- Mochi: Give medication (10 min; high priority)
-- Luna: Feed Luna (10 min; high priority)
+```powershell
+python -m pytest -v
 ```
 
-**What this demonstrates:** Sorting returns tasks chronologically, but filtering preserves the original task order rather than sorting it automatically. Conflict warnings identify overlapping activities. Completing recurring tasks schedules future occurrences, which are not selected for today's plan. The final plan selects tasks according to priority, duration, and the owner's 50-minute budget; it does not automatically avoid conflicts.
+**Verified baseline:** 15 tests passed in 1.71 seconds on Windows with Python 3.13.7. This result covers the original project and does **not** verify the planned agent or evaluator.
+
+## Sample interactions
+
+The following are **planned acceptance scenarios**, not recorded outputs of a finished AI system. Replace each expected result with an actual captured run after implementing the extension.
+
+### Scenario 1: Overlapping care tasks
+
+**Input:** Two pending tasks are scheduled for 08:00, each requiring 15 minutes, with enough room later in the scheduling window.
+
+**Expected behavior:** Identify the overlap, propose a non-overlapping alternative, recheck the schedule, and explain the change. If the time is fixed or no acceptable slot exists, flag the conflict for human review.
+
+**Actual output:** _To be captured after implementation._
+
+### Scenario 2: More tasks than the daily time budget
+
+**Input:** An owner has 30 available minutes, but pending tasks require 50 minutes in total.
+
+**Expected behavior:** Produce a plan that respects the 30-minute budget, explain task selection, and explicitly list tasks that could not fit.
+
+**Actual output:** _To be captured after implementation._
+
+### Scenario 3: No available slot
+
+**Input:** A 20-minute task must fit inside a scheduling window with only 10 free minutes.
+
+**Expected behavior:** Report that no suitable slot exists; do not claim the task was scheduled; request owner review.
+
+**Actual output:** _To be captured after implementation._
+
+## Design decisions and trade-offs
+
+- **Reuse tested scheduling code:** Build around the existing `Scheduler` instead of replacing functioning recurrence, conflict detection, and task management.
+- **Prefer reproducibility:** Use a deterministic, rule-based planning agent without requiring API keys, external services, or paid inference.
+- **Separate planning from evaluation:** Check proposed results independently so planning mistakes are easier to detect and test.
+- **Keep a human in control:** Present proposed changes for review rather than automatically changing medication or other care schedules.
+- **Acknowledge limits:** Rule-based scheduling is explainable but cannot infer every real-world care requirement or medical urgency from a short task description.
+
+## Reliability and testing
+
+### Verified baseline
+
+On the copied PawPal project, the following command completed successfully:
+
+```powershell
+python -m pytest -v
+```
+
+```text
+collected 15 items
+========================== 15 passed in 1.71s ==========================
+```
+
+The baseline tests cover recurrence, overlap detection, available-slot calculations, and basic task operations.
+
+### Planned extension evaluation
+
+Before final submission, add tests for:
+
+- Detecting and revising fixable overlaps.
+- Respecting the owner's daily time budget.
+- Reporting tasks that cannot be scheduled.
+- Rejecting invalid inputs without crashing.
+- Producing consistent plans for identical inputs.
+- Avoiding unintended changes to existing tasks before owner approval.
+
+Record actual test results and at least two or three **real input/output examples** here. Report failures and unresolved edge cases honestly.
+
+## Limitations and responsible use
+
+PawPal AI is a planning aid, not a veterinary decision system. It must not recommend changing medication doses, prescribed timing, or treatment plans. Scheduling suggestions can be incomplete when the owner has not entered all constraints. Owners remain responsible for confirming care requirements and reviewing any proposed changes.
+
+## Project reflection
+
+Extending PawPal+ shows how a useful application can become more reliable by adding explicit planning, validation, evaluation, and explanations rather than relying on a plausible-looking output alone. The baseline testing also demonstrates the value of preserving working behavior before introducing more complex features.
+
+**Graded AI collaboration and responsible-design reflection:** See [`model_card.md`](model_card.md) once it has been created and completed. That file will document AI-assisted development, an AI suggestion accepted, one revised or rejected, limitations, and future improvements.
+
+## Development status and next steps
+
+- [x] Copy the Module 2 PawPal project to a dedicated final-project repository.
+- [x] Confirm the original 15 automated tests pass.
+- [ ] Implement and integrate the planning agent.
+- [ ] Implement independent evaluation and guardrails.
+- [ ] Update `diagrams/architecture.mmd` to reflect the finished code.
+- [ ] Capture three real end-to-end sample interactions.
+- [ ] Run and document extension tests.
+- [ ] Complete `model_card.md` and final portfolio review.

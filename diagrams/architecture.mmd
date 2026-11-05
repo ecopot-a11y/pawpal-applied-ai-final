@@ -1,0 +1,19 @@
+flowchart TD
+    U[Pet owner] --> UI[Streamlit app.py]
+    UI --> V[Input validation and guardrails]
+    V -->|Invalid| ERR[Show correction message]
+    V -->|Valid| DATA[Owner, Pet, Task records in pawpal_system.py]
+    DATA --> PLAN[Planning agent: propose timed care plan]
+    PLAN --> CHECK[Evaluator: check overlaps, budget and omissions]
+    CHECK -->|Fixable issue| REVISE[Revise proposed slots]
+    REVISE --> CHECK
+    CHECK -->|Unresolved issue| FLAG[Flag tasks for manual review]
+    CHECK -->|Pass| EXPLAIN[Explain choices and tradeoffs]
+    FLAG --> EXPLAIN
+    EXPLAIN --> UI
+    UI --> APPROVE{Owner reviews plan}
+    APPROVE -->|Accept| SAVE[Apply approved changes]
+    APPROVE -->|Reject| UI
+    TEST[Pytest and scenario evaluation] -.-> V
+    TEST -.-> PLAN
+    TEST -.-> CHECK
