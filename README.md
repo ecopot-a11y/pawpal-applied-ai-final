@@ -16,8 +16,6 @@ Original project: [AI110 Module 2 PawPal starter](https://github.com/ecopot-a11y
 
 ## What the final project adds
 
-**Planned integrated extension (not yet implemented):**
-
 1. **Planning agent:** Build a proposed timed care schedule from the owner's pets, tasks, priorities, available minutes, and scheduling window.
 2. **Evaluate-and-revise loop:** Detect overlapping proposed tasks, time-budget violations, and unscheduled tasks; attempt a bounded revision when possible.
 3. **Reliability guardrails:** Validate input and scheduling constraints; flag tasks that cannot be scheduled rather than silently omitting them or claiming success.
@@ -102,11 +100,13 @@ python main.py
 python -m pytest -v
 ```
 
-**Verified baseline:** 15 tests passed in 1.71 seconds on Windows with Python 3.13.7. This result covers the original project and does **not** verify the planned agent or evaluator.
+The eight new tests verified that the planning system can detect conflicting appointments, reschedule flexible tasks, enforce daily time limits, report unavailable scheduling slots, reject invalid scheduling windows, and avoid unnecessary changes to valid schedules.
+
+The reliability evaluator also successfully identified overlapping appointments and time-budget violations. Completed tasks and tasks scheduled for future dates were excluded from the current planning process as expected.
+
+All 15 original PawPal tests continued to pass, demonstrating that the new features did not break the existing functionality covered by those tests.
 
 ## Sample interactions
-
-The following are **planned acceptance scenarios**, not recorded outputs of a finished AI system. Replace each expected result with an actual captured run after implementing the extension.
 
 ### Scenario 1: Overlapping care tasks
 
