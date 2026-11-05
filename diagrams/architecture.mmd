@@ -1,19 +1,21 @@
 flowchart TD
-    U[Pet owner] --> UI[Streamlit app.py]
-    UI --> V[Input validation and guardrails]
-    V -->|Invalid| ERR[Show correction message]
-    V -->|Valid| DATA[Owner, Pet, Task records in pawpal_system.py]
-    DATA --> PLAN[Planning agent: propose timed care plan]
-    PLAN --> CHECK[Evaluator: check overlaps, budget and omissions]
-    CHECK -->|Fixable issue| REVISE[Revise proposed slots]
-    REVISE --> CHECK
-    CHECK -->|Unresolved issue| FLAG[Flag tasks for manual review]
-    CHECK -->|Pass| EXPLAIN[Explain choices and tradeoffs]
-    FLAG --> EXPLAIN
-    EXPLAIN --> UI
-    UI --> APPROVE{Owner reviews plan}
-    APPROVE -->|Accept| SAVE[Apply approved changes]
-    APPROVE -->|Reject| UI
-    TEST[Pytest and scenario evaluation] -.-> V
-    TEST -.-> PLAN
+    U[Pet owner] --> UI[Streamlit interface: app.py]
+    UI --> INPUT[Enter pets, tasks, priorities and daily time budget]
+    INPUT --> DATA[In-memory Owner, Pet and Task records: pawpal_system.py]
+    UI -->|Generate validated AI care plan| VALIDATE[Validate planning date, time window and budget]
+    VALIDATE -->|Invalid| ERROR[Display validation error; no plan applied]
+    VALIDATE -->|Valid| PLAN[Rule-based planner: ai_planner.py]
+    DATA --> PLAN
+    PLAN --> FIXED[Reserve fixed-time tasks; flag conflicting or out-of-window appointments]
+    FIXED --> FLEX[Assign flexible tasks to available slots within remaining budget]
+    FLEX --> OMIT[Record unscheduled tasks, adjustments and decisions]
+    OMIT --> CHECK[Independent evaluation: reliability.py]
+    CHECK -->|Pass| DISPLAY[Show proposed times, validation status, unresolved tasks and decision log]
+    CHECK -->|Fail| REJECT[Discard invalid proposal and flag evaluator issues]
+    REJECT --> DISPLAY
+    DISPLAY --> UI
+    UI --> REVIEW[Owner reviews suggestions and manually edits tasks if desired]
+    REVIEW -.->|Manual edits only| DATA
+    TEST[Pytest: 23 passing tests, including 8 planner tests] -.-> PLAN
     TEST -.-> CHECK
+    TEST -.-> DATA
