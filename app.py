@@ -150,3 +150,30 @@ if st.button("Generate daily plan", type="primary"):
         st.success(f"Selected {len(plan)} task(s) using {sum(t.duration_minutes for _, t in plan)} of {owner.available_minutes} available minutes.")
         st.caption("The plan prioritizes importance and duration; it does not automatically resolve timed overlaps.")
 
+
+st.divider()
+st.subheader('6. AI-assisted care planning (proposal only)')
+st.caption('Rule-based plan → evaluate → revise workflow. Fixed appointments are never moved automatically. Review all suggestions before editing tasks.')
+from ai_planner import plan_care
+
+if st.button('Generate validated AI care plan'):
+    try:
+        result = plan_care(owner, on_date=plan_date)
+        if result.entries:
+            st.table([{'Pet': e.pet.name, 'Task': e.task.description,
+                       'Proposed start': e.start, 'Minutes': e.task.duration_minutes,
+                       'Priority': e.task.priority} for e in result.entries])
+        else:
+            st.info('No tasks could be safely placed in the proposed plan.')
+        if result.check.passed:
+            st.success(f'Independent validation passed. {result.check.minutes_used} of {owner.available_minutes} minutes used; {result.revisions} scheduling revision(s).')
+        if result.unplanned:
+            st.warning('Unplanned tasks require owner review:')
+            for note in result.unplanned:
+                st.write(f'- {note}')
+        with st.expander('Planning decision log'):
+            for note in result.decisions:
+                st.write(f'- {note}')
+        st.info('This is a proposal, not an automatic update. Confirm changes yourself in the task scheduler. Do not change medication timing without veterinary guidance.')
+    except ValueError as exc:
+        st.error(f'Unable to plan: {exc}')
