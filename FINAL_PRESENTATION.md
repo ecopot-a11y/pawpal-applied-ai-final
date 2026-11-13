@@ -52,7 +52,7 @@ I used AI as a coding and design collaborator. One suggestion I **accepted** was
 
 ## 5:50–6:15 — Conclusion
 
-PawPal AI shows how I approach AI engineering: build on working software, define the limits of automation, test the behavior, and make the system's decisions understandable. My proudest outcome is not just that the tests passed; it is that the application reports what it **cannot** safely schedule instead of presenting a misleadingly complete plan.
+PawPal AI shows how I approach AI engineering: build on working software, define the limits of automation, test the behavior, and make the system's decisions understandable. My proudest outcome is not just that the tests passed; it is that the application reports what it cannot safely schedule instead of presenting a misleadingly complete plan.
 
 Thank you. The repository contains the source code, reproducible demonstrations, architecture diagram, reliability tests, README, and responsible-AI model card.
 
@@ -64,4 +64,3 @@ Thank you. The repository contains the source code, reproducible demonstrations,
 - Run `python demo_ai.py` or show the Streamlit planning section.
 - Highlight a scheduled task, an unplanned task, and the validation/decision log.
 - Show the saved `python -m pytest -v` result: **23 passed in 0.54s**.
-- Do **not** describe the application as automatically saving or approving proposed changes.
