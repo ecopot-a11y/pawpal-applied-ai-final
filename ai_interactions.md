@@ -25,4 +25,4 @@ The generated files were integrated locally and verified with pytest. The six av
 
 ## Final project collaboration
 
-For the final PawPal AI extension, I used ChatGPT to develop a separate planning agent and reliability evaluator, integrate the proposal-only workflow, and draft tests and documentation. I accepted separate planning and evaluation modules and narrowed automatic schedule changes to proposals requiring owner review. See [model_card.md](model_card.md) for the complete graded reflection. The final combined test run reported 23 passed in 0.54 seconds.
+For the final PawPal AI extension, I used AI to develop a separate planning agent and reliability evaluator, integrate the proposal-only workflow, and draft tests and documentation. I accepted separate planning and evaluation modules and narrowed automatic schedule changes to proposals requiring owner review. See [model_card.md](model_card.md) for the complete graded reflection. The final combined test run reported 23 passed in 0.54 seconds.
