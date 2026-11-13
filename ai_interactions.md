@@ -4,7 +4,7 @@
 
 ---
 
-## Agent Workflow (SF7)
+## Agent Workflow (SF7) — historical Module 2 work
 
 > Document your experience using an AI agent (e.g., Cursor Agent, Claude, Copilot) to make multi-step changes autonomously.
 
@@ -21,23 +21,8 @@ I asked Claude to add a third, optional scheduling algorithm to PawPal+: find th
 
 **What did you have to verify or fix manually?**
 
-The assistant's files are drafts until copied into my local repository. I must run `python -m pytest` against my actual project, verify that the new method does not change existing scheduling behavior, and try the new method with realistic pet tasks. I should also confirm that the scheduling window fits my needs; this implementation does not schedule across midnight, change existing task times, or reserve an available slot automatically. No manual corrections have been claimed before local verification.
+The generated files were integrated locally and verified with pytest. The six available-slot tests passed in the final combined 23-test run. The method does not schedule across midnight, change existing task times, or reserve a slot automatically.
 
----
+## Final project collaboration
 
-## Prompt Comparison (SF11)
-
-> Compare two different prompts (or two different models) on the same task.
-
-| | Option A | Option B |
-|-|----------|----------|
-| **Model / tool used** | | |
-| **Prompt** | | |
-| **Response summary** | | |
-| **What was useful** | | |
-| **Problems noticed** | | |
-| **Decision** | | |
-
-**Which approach did you use in your final implementation and why?**
-
-<!-- Your conclusion -->
+For the final PawPal AI extension, I used ChatGPT to develop a separate planning agent and reliability evaluator, integrate the proposal-only workflow, and draft tests and documentation. I accepted separate planning and evaluation modules and narrowed automatic schedule changes to proposals requiring owner review. See [model_card.md](model_card.md) for the complete graded reflection. The final combined test run reported 23 passed in 0.54 seconds.

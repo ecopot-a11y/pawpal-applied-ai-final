@@ -17,11 +17,20 @@ Result: **8 passed**.
 | Manually supplied overlapping, over-budget plan | Independent evaluator rejects both violations | Pass |
 | Completed and future tasks | Exclude from today's plan | Pass |
 
-## Required local verification
+## Verified local combined suite
 
-Run `python -m pytest -v` in the final project directory to verify the original 15 tests and the new 8 tests together. Record the actual count and results in README.md.
+Command: `python -m pytest -v`
 
-Run `python -m streamlit run app.py`, add sample pets/tasks, and click **Generate validated AI care plan**. Confirm the proposal and decision log appear. This UI check has not yet been performed here.
+```text
+collected 23 items
+========================== 23 passed in 0.54s ==========================
+```
+
+The reported Windows run used Python 3.13.7 and pytest 9.2.0. All 15 original tests and eight new tests passed. See README.md and sample_output.txt for four CLI scenarios.
+
+## UI verification
+
+Run `python -m streamlit run app.py` to inspect the current build. The README links an optional Loom walkthrough. Automated end-to-end UI testing has not been demonstrated; the combined pytest result is not a browser test result.
 
 ## Important limitations
 

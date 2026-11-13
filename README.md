@@ -1,12 +1,10 @@
 # PawPal AI — Intelligent Pet Care Planning and Reliability System
 
-**Status:** In development — original PawPal+ application verified; AI planning extension pending implementation and evaluation.
-
 ## Project summary
 
-PawPal AI is an extension of **PawPal+**, my Module 2 AI110 project. It aims to help pet owners coordinate care across multiple pets by proposing practical schedules, checking constraints, explaining scheduling decisions, and identifying tasks that need human attention.
+PawPal AI is an extension of **PawPal+**, my Module 2 AI110 project. It helps pet owners coordinate care across multiple pets by proposing practical schedules, checking constraints, explaining scheduling decisions, and identifying tasks that need human attention.
 
-The project emphasizes **reliable, explainable planning**: a proposed schedule should be checked before a pet owner relies on it. The intended AI extension uses a multi-step, rule-based planning agent with an evaluate-and-revise loop, rather than a hosted language model.
+The project emphasizes **reliable, explainable planning**: a proposed schedule should be checked before a pet owner relies on it. The implemented extension uses a multi-step, rule-based planning agent with a propose-and-check workflow with flexible-task placement followed by independent validation, rather than a hosted language model.
 
 ## Original project: PawPal+ (Module 2)
 
@@ -16,29 +14,29 @@ Original project: [AI110 Module 2 PawPal starter](https://github.com/ecopot-a11y
 
 ## What the final project adds
 
-1. **Planning agent:** Build a proposed timed care schedule from the owner's pets, tasks, priorities, available minutes, and scheduling window.
-2. **Evaluate-and-revise loop:** Detect overlapping proposed tasks, time-budget violations, and unscheduled tasks; attempt a bounded revision when possible.
-3. **Reliability guardrails:** Validate input and scheduling constraints; flag tasks that cannot be scheduled rather than silently omitting them or claiming success.
-4. **Explainability and owner oversight:** Explain the resulting plan and unresolved trade-offs; present proposed changes for owner review before applying them.
-5. **Scenario-based evaluation:** Test the integrated workflow with reproducible cases and record what passed or failed.
+1. **Planning agent:** Builds a proposed timed care schedule from the owner's pets, tasks, priorities, available minutes, and scheduling window.
+2. **Propose-and-check workflow:** Places flexible tasks around fixed appointments, checks the resulting proposal, and flags tasks that cannot be scheduled. If independent validation fails, the proposal is rejected.
+3. **Reliability guardrails:** Validate input and scheduling constraints and flag tasks that cannot be scheduled rather than silently omitting them or claiming success.
+4. **Explainability and owner oversight:** Explain the resulting plan and unresolved trade-offs; present proposed changes for owner review without automatically applying them.
+5. **Scenario-based evaluation:** Tests the integrated workflow with reproducible cases and records what passed or failed.
 
-The extension must be integrated into the Streamlit application, not run only as a standalone demo.
+The extension is integrated into section 6 of the Streamlit application. The app displays proposed schedules, independent validation results, unplanned tasks, and a decision log. It does not apply schedule changes automatically.
 
 ## Architecture overview
 
 Mermaid source: [`diagrams/architecture.mmd`](diagrams/architecture.mmd).
 
-The **target architecture** follows this flow:
+The **implemented architecture** follows this flow:
 
 1. The pet owner enters tasks and planning preferences through Streamlit (`app.py`).
 2. Input validation checks the request before planning.
 3. The system retrieves the in-memory `Owner`, `Pet`, and `Task` records managed by `pawpal_system.py`.
-4. A planning agent proposes task times.
-5. An evaluator checks conflicts, time budget, and omissions; the planner revises fixable issues within a bounded loop.
-6. The app displays an explanation, unresolved issues, and a proposed plan for human review.
+4. `ai_planner.py` proposes task times for flexible tasks and preserves fixed-time appointments.
+5. `reliability.py` independently checks overlap, scheduling window, time budget, task eligibility, and fixed-time preservation. The planner places flexible tasks around occupied time and flags tasks it cannot schedule. This is a deterministic propose-and-check workflow, not an unrestricted iterative search.
+6. The app displays an explanation, unresolved issues, and a **proposal only** for human review; the user must manually make any desired changes.
 7. Automated tests exercise validation, planning, and evaluation.
 
-**Architecture status:** This describes the intended final design. Update the Mermaid source and this section to match the actual implementation before final submission.
+**Architecture verification:** The Mermaid source should match the committed `ai_planner.py`, `reliability.py`, and `app.py`. In particular, it must not depict an implemented automatic approval/save action, since the UI currently presents proposals only.
 
 ## Technology
 
@@ -48,7 +46,7 @@ The **target architecture** follows this flow:
 - Git and GitHub version control
 - Mermaid architecture diagram
 
-The planned planning agent is a **rule-based agentic workflow**, not a fine-tuned model or an LLM. It should not be described as providing veterinary diagnosis or medical advice.
+The implemented planner is a **deterministic, rule-based planning workflow with independent evaluation**, not a fine-tuned model or an LLM. It should not be described as providing veterinary diagnosis or medical advice.
 
 ## Setup and run
 
@@ -80,13 +78,13 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-### 4. Run the existing PawPal+ interface
+### 4. Run the PawPal AI Streamlit interface
 
 ```powershell
 python -m streamlit run app.py
 ```
 
-The interface currently supports pet/task management, recurrence, conflict warnings, and daily task selection. **The new AI planning interface will be documented here after implementation.**
+The interface supports pet/task management, recurrence, conflict warnings, daily task selection, and **section 6: AI-assisted care planning (proposal only)**. Add pets and tasks, choose a plan date, then click **Generate validated AI care plan**. Inspect the proposed schedule, independent validation, unplanned tasks, and decision log. The UI does not automatically save proposed times.
 
 ### 5. Run the original command-line demonstration
 
@@ -100,37 +98,74 @@ python main.py
 python -m pytest -v
 ```
 
-The eight new tests verified that the planning system can detect conflicting appointments, reschedule flexible tasks, enforce daily time limits, report unavailable scheduling slots, reject invalid scheduling windows, and avoid unnecessary changes to valid schedules.
+The original command-line demonstration exercises the legacy scheduler. For reproducible **AI planning** examples, run the additional `demo_ai.py` file:
 
-The reliability evaluator also successfully identified overlapping appointments and time-budget violations. Completed tasks and tasks scheduled for future dates were excluded from the current planning process as expected.
+```powershell
+python demo_ai.py
+```
 
-All 15 original PawPal tests continued to pass, demonstrating that the new features did not break the existing functionality covered by those tests.
+The following inputs and outputs were produced by running that script against the supplied `pawpal_system.py`, `ai_planner.py`, and `reliability.py` implementation with the fixed test date `2026-11-05`. 
 
-## Sample interactions
+## Sample interactions: actual inputs, outputs, and guardrails
 
-### Scenario 1: Overlapping care tasks
+```text
+=== Flexible task avoids fixed appointment ===
+Input: budget=60 min, window=08:00-20:00
+  Mochi: Walk, 20 min, high, time=08:00
+  Luna: Feed, 10 min, medium, time=flexible
+Proposed plan:
+  08:00 Mochi: Walk
+  08:20 Luna: Feed
+Validation: PASS; minutes=30/60; revisions=1
+Unplanned:
+  (none)
+Decision log:
+  Scheduled Mochi: Walk at 08:00 (high priority).
+  Revised Luna: Feed to 08:20 to avoid occupied time.
+  Scheduled Luna: Feed at 08:20 (medium priority).
 
-**Input:** Two pending tasks are scheduled for 08:00, each requiring 15 minutes, with enough room later in the scheduling window.
+=== Time budget omits a task ===
+Input: budget=60 min, window=08:00-20:00
+  Mochi: Walk, 40 min, high, time=flexible
+  Luna: Feed, 20 min, high, time=flexible
+  Luna: Play, 30 min, low, time=flexible
+Proposed plan:
+  08:00 Luna: Feed
+  08:20 Mochi: Walk
+Validation: PASS; minutes=60/60; revisions=1
+Unplanned:
+  Luna: Play — exceeds remaining time budget
+Decision log:
+  Scheduled Luna: Feed at 08:00 (high priority).
+  Revised Mochi: Walk to 08:20 to avoid occupied time.
+  Scheduled Mochi: Walk at 08:20 (high priority).
 
-**Expected behavior:** Identify the overlap, propose a non-overlapping alternative, recheck the schedule, and explain the change. If the time is fixed or no acceptable slot exists, flag the conflict for human review.
+=== No free slot in planning window ===
+Input: budget=100 min, window=08:00-09:00
+  Mochi: Walk, 50 min, high, time=08:00
+  Luna: Feed, 20 min, medium, time=flexible
+Proposed plan:
+  08:00 Mochi: Walk
+Validation: PASS; minutes=50/100; revisions=0
+Unplanned:
+  Luna: Feed — no free slot; review manually
+Decision log:
+  Scheduled Mochi: Walk at 08:00 (high priority).
 
-**Actual output:** _To be captured after implementation._
+=== Conflicting fixed appointments ===
+Input: budget=60 min, window=08:00-20:00
+  Mochi: Walk, 20 min, high, time=08:00
+  Luna: Feed, 10 min, medium, time=08:00
+Proposed plan:
+  08:00 Mochi: Walk
+Validation: PASS; minutes=20/60; revisions=0
+Unplanned:
+  Luna: Feed — fixed-time conflict; review manually
+Decision log:
+  Scheduled Mochi: Walk at 08:00 (high priority).
+```
 
-### Scenario 2: More tasks than the daily time budget
-
-**Input:** An owner has 30 available minutes, but pending tasks require 50 minutes in total.
-
-**Expected behavior:** Produce a plan that respects the 30-minute budget, explain task selection, and explicitly list tasks that could not fit.
-
-**Actual output:** _To be captured after implementation._
-
-### Scenario 3: No available slot
-
-**Input:** A 20-minute task must fit inside a scheduling window with only 10 free minutes.
-
-**Expected behavior:** Report that no suitable slot exists; do not claim the task was scheduled; request owner review.
-
-**Actual output:** _To be captured after implementation._
+**Interpretation:** `Validation: PASS` means the **selected proposed entries** satisfy the evaluator's constraints; it does **not** mean all requested tasks were scheduled. The `Unplanned` field must be reviewed separately. In the fixed-time conflict example, one appointment remains unplanned for human review.
 
 ## Design decisions and trade-offs
 
@@ -142,33 +177,42 @@ All 15 original PawPal tests continued to pass, demonstrating that the new featu
 
 ## Reliability and testing
 
-### Verified baseline
+### Verified local automated test execution
 
-On the copied PawPal project, the following command completed successfully:
+The final-project test run used:
 
 ```powershell
 python -m pytest -v
 ```
 
 ```text
-collected 15 items
-========================== 15 passed in 1.71s ==========================
+collected 23 items
+========================== 23 passed in 0.54s ==========================
 ```
 
-The baseline tests cover recurrence, overlap detection, available-slot calculations, and basic task operations.
+This includes **15 original PawPal tests** and **8 new planning/evaluation tests**. All 23 passed (100% of the executed test cases); this is not a claim of 100% real-world scheduling accuracy.
 
-### Planned extension evaluation
+| New automated scenario | Observed test result |
+|---|---|
+| Two fixed appointments conflict | PASS — conflict flagged; no silent move |
+| Flexible task alongside fixed appointment | PASS — placed in nonoverlapping slot |
+| Tasks exceed daily time budget | PASS — omission reported |
+| No sufficiently long free slot | PASS — task flagged for manual review |
+| Invalid time window | PASS — raises `ValueError` |
+| Valid nonoverlapping fixed tasks | PASS — no unnecessary revision |
+| Evaluator given overlapping, over-budget plan | PASS — both violations detected |
+| Completed and future tasks | PASS — excluded from today's proposal |
 
-Before final submission, add tests for:
+### Reproducible scenario results
 
-- Detecting and revising fixable overlaps.
-- Respecting the owner's daily time budget.
-- Reporting tasks that cannot be scheduled.
-- Rejecting invalid inputs without crashing.
-- Producing consistent plans for identical inputs.
-- Avoiding unintended changes to existing tasks before owner approval.
+The four CLI scenarios above demonstrate actual planning outputs. In the first, a flexible feeding task is placed at 08:20 after an 08:00 walk. In the second, a 30-minute play task is omitted when the 60-minute budget is exhausted. In the third, an unavailable 20-minute slot is flagged. In the fourth, overlapping fixed appointments are **not** silently moved.
 
-Record actual test results and at least two or three **real input/output examples** here. Report failures and unresolved edge cases honestly.
+### What has not been established
+
+- The 23 passing tests do not constitute full Streamlit UI automation or exhaustive edge-case coverage.
+- A manual end-to-end Streamlit browser check is still recommended before submission.
+- Medication timing, medical urgency, multiple caregivers, persistence, and overnight tasks are outside the tested scope.
+- Application logging uses Python logging for selected warnings and errors; the on-screen decision log records planning choices. Persistent audit storage is not implemented.
 
 ## Limitations and responsible use
 
@@ -176,17 +220,25 @@ PawPal AI is a planning aid, not a veterinary decision system. It must not recom
 
 ## Project reflection
 
-Extending PawPal+ shows how a useful application can become more reliable by adding explicit planning, validation, evaluation, and explanations rather than relying on a plausible-looking output alone. The baseline testing also demonstrates the value of preserving working behavior before introducing more complex features.
+Extending PawPal+ shows how a useful application can become more reliable by adding explicit planning, validation, evaluation, and explanations rather than relying on a plausible-looking output alone. The final test run confirmed that the 15 original cases still pass alongside eight new planning and evaluation cases.
 
-**Graded AI collaboration and responsible-design reflection:** See [`model_card.md`](model_card.md) once it has been created and completed. That file will document AI-assisted development, an AI suggestion accepted, one revised or rejected, limitations, and future improvements.
+**Graded AI collaboration and responsible-design reflection:** See [`model_card.md`](model_card.md). That file documents AI-assisted development, an AI suggestion accepted, one revised or rejected, limitations, and future improvements.
+
+## Optional video walkthrough
+
+[Loom: PawPal AI end-to-end demonstration](https://www.loom.com/share/17127e5169b048a4b36e1a084dd54c52)
+
+This walkthrough demonstrates the integrated Streamlit planner, three planning scenarios, and automated reliability results. Reproducible input/output evidence and test results are documented above; the video is supplemental.
 
 ## Development status and next steps
 
 - [x] Copy the Module 2 PawPal project to a dedicated final-project repository.
-- [x] Confirm the original 15 automated tests pass.
-- [ ] Implement and integrate the planning agent.
-- [ ] Implement independent evaluation and guardrails.
-- [ ] Update `diagrams/architecture.mmd` to reflect the finished code.
-- [ ] Capture three real end-to-end sample interactions.
-- [ ] Run and document extension tests.
-- [ ] Complete `model_card.md` and final portfolio review.
+- [x] Preserve the original scheduling code and pass its 15 baseline tests.
+- [x] Implement the planning workflow and independent evaluator.
+- [x] Integrate AI-assisted care planning into Streamlit section 6.
+- [x] Record four reproducible CLI input/output examples.
+- [x] Run the complete suite: 23 tests passed.
+- [x] Prepare a separate graded responsible-AI reflection in `model_card.md`.
+- [x] Manually verify the enhanced Streamlit UI and record any findings.
+- [x] Confirm the Mermaid diagram matches the committed implementation (proposal-only, no automatic save).
+- [x] Commit and push the final documentation and demo files.
